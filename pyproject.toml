@@ -6,7 +6,19 @@ build-backend = "setuptools.build_meta"
 name = "facial-recognition-pipeline"
 version = "0.1.0"
 description = "A laptop-based facial recognition pipeline built for learning"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "numpy>=2.0,<3",
+    "opencv-python==4.14.0.94",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3,<9",
+]
+
+[project.scripts]
+download-face-models = "face_pipeline.download_models:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
