@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+.DS_Store
+
+# Downloaded model weights
+models/*.onnx
+
+# Personal enrollment data and generated results
+data/*
+!data/.gitkeep
+results/*
+!results/.gitkeep
+
