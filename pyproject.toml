@@ -18,6 +18,7 @@ dev = [
 ]
 
 [project.scripts]
+detect-faces = "face_pipeline.detect:main"
 download-face-models = "face_pipeline.download_models:main"
 
 [tool.setuptools.packages.find]
@@ -26,4 +27,3 @@ where = ["src"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
-
