@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import cv2 as cv
@@ -21,6 +21,7 @@ class FaceDetection:
     height: int
     landmarks: NDArray[np.float32]
     score: float
+    model_output: NDArray[np.float32] = field(repr=False)
 
     @property
     def box(self) -> tuple[int, int, int, int]:
@@ -52,6 +53,7 @@ class FaceDetection:
             height=max(0, bottom - top),
             landmarks=values[4:14].reshape(5, 2).copy(),
             score=float(values[14]),
+            model_output=values.copy(),
         )
 
 
@@ -137,4 +139,3 @@ def draw_detections(
         )
 
     return annotated
-
