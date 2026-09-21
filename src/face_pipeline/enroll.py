@@ -8,8 +8,10 @@ import cv2 as cv
 import numpy as np
 from numpy.typing import NDArray
 
+from face_pipeline.camera import CameraError, open_camera, read_camera_frame
 from face_pipeline.detector import (
     DEFAULT_DETECTOR_MODEL,
+    DEFAULT_SCORE_THRESHOLD,
     FaceDetection,
     YuNetFaceDetector,
     draw_detections,
@@ -58,6 +60,15 @@ def parse_args() -> argparse.Namespace:
         "--embedding-model",
         type=Path,
         default=DEFAULT_EMBEDDING_MODEL,
+    )
+    parser.add_argument(
+        "--score-threshold",
+        type=float,
+        default=DEFAULT_SCORE_THRESHOLD,
+        help=(
+            "Minimum YuNet detection confidence "
+            f"(default: {DEFAULT_SCORE_THRESHOLD})"
+        ),
     )
     return parser.parse_args()
 
@@ -113,17 +124,19 @@ def samples_from_camera(
 ) -> list[EnrollmentSample]:
     if sample_count < 1:
         raise SystemExit("--samples must be at least 1")
-    camera = cv.VideoCapture(camera_index)
-    if not camera.isOpened():
-        raise SystemExit(f"Could not open camera index {camera_index}")
+    try:
+        camera = open_camera(camera_index)
+    except CameraError as error:
+        raise SystemExit(str(error)) from error
 
     samples: list[EnrollmentSample] = []
     print("Press SPACE to capture a sample and q to cancel.")
     try:
         while len(samples) < sample_count:
-            success, frame = camera.read()
-            if not success:
-                raise SystemExit("Could not read a frame from the camera")
+            try:
+                frame = read_camera_frame(camera)
+            except CameraError as error:
+                raise SystemExit(str(error)) from error
             frame = cv.flip(frame, 1)
             detections = detector.detect(frame)
             annotated = draw_detections(frame, detections)
@@ -159,7 +172,10 @@ def samples_from_camera(
 
 def main() -> None:
     args = parse_args()
-    detector = YuNetFaceDetector(args.detector_model.expanduser().resolve())
+    detector = YuNetFaceDetector(
+        args.detector_model.expanduser().resolve(),
+        score_threshold=args.score_threshold,
+    )
     embedder = SFaceEmbedder(args.embedding_model.expanduser().resolve())
 
     if args.image:
@@ -191,4 +207,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

@@ -10,6 +10,8 @@ from numpy.typing import NDArray
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DETECTOR_MODEL = PROJECT_ROOT / "models" / "face_detection_yunet_2023mar.onnx"
+DEFAULT_SCORE_THRESHOLD = 0.8
+DEFAULT_MAX_INPUT_DIMENSION = 640
 EXPECTED_YUNET_VALUES = 15
 
 
@@ -61,9 +63,10 @@ class YuNetFaceDetector:
     def __init__(
         self,
         model_path: Path = DEFAULT_DETECTOR_MODEL,
-        score_threshold: float = 0.9,
+        score_threshold: float = DEFAULT_SCORE_THRESHOLD,
         nms_threshold: float = 0.3,
         top_k: int = 5000,
+        max_input_dimension: int = DEFAULT_MAX_INPUT_DIMENSION,
     ) -> None:
         if not model_path.is_file():
             raise FileNotFoundError(
@@ -71,7 +74,10 @@ class YuNetFaceDetector:
             )
         if not 0.0 <= score_threshold <= 1.0:
             raise ValueError("score_threshold must be between 0 and 1")
+        if max_input_dimension < 1:
+            raise ValueError("max_input_dimension must be at least 1")
 
+        self._max_input_dimension = max_input_dimension
         self._detector = cv.FaceDetectorYN.create(
             model=str(model_path),
             config="",
@@ -84,11 +90,30 @@ class YuNetFaceDetector:
     def detect(self, frame: NDArray[np.uint8]) -> list[FaceDetection]:
         validate_frame(frame)
         frame_height, frame_width = frame.shape[:2]
-        self._detector.setInputSize((frame_width, frame_height))
-        _, faces = self._detector.detect(frame)
+        scale = min(1.0, self._max_input_dimension / max(frame_width, frame_height))
+        if scale < 1.0:
+            input_width = max(1, int(round(frame_width * scale)))
+            input_height = max(1, int(round(frame_height * scale)))
+            detector_frame = cv.resize(
+                frame,
+                (input_width, input_height),
+                interpolation=cv.INTER_AREA,
+            )
+        else:
+            input_width = frame_width
+            input_height = frame_height
+            detector_frame = frame
+
+        self._detector.setInputSize((input_width, input_height))
+        _, faces = self._detector.detect(detector_frame)
 
         if faces is None:
             return []
+
+        if scale < 1.0:
+            faces = faces.copy()
+            faces[:, [0, 2, 4, 6, 8, 10, 12]] /= scale
+            faces[:, [1, 3, 5, 7, 9, 11, 13]] /= scale
 
         detections = [
             FaceDetection.from_yunet_row(face, frame_width, frame_height)

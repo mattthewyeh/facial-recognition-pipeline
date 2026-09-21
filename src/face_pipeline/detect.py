@@ -6,8 +6,10 @@ from pathlib import Path
 
 import cv2 as cv
 
+from face_pipeline.camera import CameraError, open_camera, read_camera_frame
 from face_pipeline.detector import (
     DEFAULT_DETECTOR_MODEL,
+    DEFAULT_SCORE_THRESHOLD,
     FaceDetection,
     YuNetFaceDetector,
     draw_detections,
@@ -30,8 +32,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--score-threshold",
         type=float,
-        default=0.9,
-        help="Minimum YuNet detection confidence (default: 0.9)",
+        default=DEFAULT_SCORE_THRESHOLD,
+        help=(
+            "Minimum YuNet detection confidence "
+            f"(default: {DEFAULT_SCORE_THRESHOLD})"
+        ),
     )
     parser.add_argument("--output", type=Path, help="Optional annotated image path")
     parser.add_argument(
@@ -78,9 +83,10 @@ def detect_image(
 
 
 def detect_camera(detector: YuNetFaceDetector, camera_index: int) -> None:
-    camera = cv.VideoCapture(camera_index)
-    if not camera.isOpened():
-        raise SystemExit(f"Could not open camera index {camera_index}")
+    try:
+        camera = open_camera(camera_index)
+    except CameraError as error:
+        raise SystemExit(str(error)) from error
 
     previous_time = time.perf_counter()
     smoothed_fps = 0.0
@@ -88,9 +94,10 @@ def detect_camera(detector: YuNetFaceDetector, camera_index: int) -> None:
 
     try:
         while True:
-            success, frame = camera.read()
-            if not success:
-                raise SystemExit("Could not read a frame from the camera")
+            try:
+                frame = read_camera_frame(camera)
+            except CameraError as error:
+                raise SystemExit(str(error)) from error
 
             detections = detector.detect(frame)
             annotated = draw_detections(frame, detections)
@@ -146,4 +153,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

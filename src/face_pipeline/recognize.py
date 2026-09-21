@@ -9,8 +9,10 @@ import cv2 as cv
 import numpy as np
 from numpy.typing import NDArray
 
+from face_pipeline.camera import CameraError, open_camera, read_camera_frame
 from face_pipeline.detector import (
     DEFAULT_DETECTOR_MODEL,
+    DEFAULT_SCORE_THRESHOLD,
     FaceDetection,
     YuNetFaceDetector,
     validate_frame,
@@ -63,6 +65,15 @@ def parse_args() -> argparse.Namespace:
         "--embedding-model",
         type=Path,
         default=DEFAULT_EMBEDDING_MODEL,
+    )
+    parser.add_argument(
+        "--score-threshold",
+        type=float,
+        default=DEFAULT_SCORE_THRESHOLD,
+        help=(
+            "Minimum YuNet detection confidence "
+            f"(default: {DEFAULT_SCORE_THRESHOLD})"
+        ),
     )
     return parser.parse_args()
 
@@ -158,18 +169,20 @@ def recognize_camera(
     embedder: SFaceEmbedder,
     matcher: FaceMatcher,
 ) -> None:
-    camera = cv.VideoCapture(camera_index)
-    if not camera.isOpened():
-        raise SystemExit(f"Could not open camera index {camera_index}")
+    try:
+        camera = open_camera(camera_index)
+    except CameraError as error:
+        raise SystemExit(str(error)) from error
 
     previous_time = time.perf_counter()
     smoothed_fps = 0.0
     print("Press q in the camera window to quit.")
     try:
         while True:
-            success, frame = camera.read()
-            if not success:
-                raise SystemExit("Could not read a frame from the camera")
+            try:
+                frame = read_camera_frame(camera)
+            except CameraError as error:
+                raise SystemExit(str(error)) from error
             frame = cv.flip(frame, 1)
             recognitions = recognize_frame(frame, detector, embedder, matcher)
             annotated = draw_recognitions(frame, recognitions)
@@ -211,7 +224,10 @@ def main() -> None:
     if not matcher.profiles:
         raise SystemExit("No profiles found. Run enroll-face before recognition.")
 
-    detector = YuNetFaceDetector(args.detector_model.expanduser().resolve())
+    detector = YuNetFaceDetector(
+        args.detector_model.expanduser().resolve(),
+        score_threshold=args.score_threshold,
+    )
     embedder = SFaceEmbedder(args.embedding_model.expanduser().resolve())
     if args.image is not None:
         recognize_image(
@@ -228,4 +244,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
