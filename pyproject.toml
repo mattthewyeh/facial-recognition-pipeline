@@ -21,6 +21,7 @@ dev = [
 detect-faces = "face_pipeline.detect:main"
 download-face-models = "face_pipeline.download_models:main"
 enroll-face = "face_pipeline.enroll:main"
+evaluate-recognition = "face_pipeline.evaluate:main"
 extract-face-embeddings = "face_pipeline.extract_embeddings:main"
 recognize-faces = "face_pipeline.recognize:main"
 
