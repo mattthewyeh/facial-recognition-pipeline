@@ -126,6 +126,8 @@ def build_report(
     latencies = [record.latency_ms for record in records]
 
     return {
+        "protocol": "exploratory_pairwise_same_dataset",
+        "warning": "Threshold selection and scoring share images. Use evaluate-heldout for held-out recognition metrics; use benchmark-recognition for warm repeated timings.",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "dataset": str(dataset),
         "identity_count": len({record.identity for record in records}),
@@ -150,7 +152,7 @@ def print_report(report: dict) -> None:
     impostor = report["similarity_scores"]["impostor_pairs"]
     configured = report["configured_threshold"]
     recommended = report["recommended_threshold"]
-    print("\nEvaluation summary")
+    print("\nExploratory evaluation (same images used for selection and scoring)")
     print(
         f"  identities={report['identity_count']} images={report['image_count']} "
         f"mean_latency={performance['mean_latency_ms']:.2f} ms "

@@ -31,7 +31,7 @@ def cosine_similarity(
             "Embedding dimensions must match: "
             f"{left_normalized.size} != {right_normalized.size}"
         )
-    return float(np.dot(left_normalized, right_normalized))
+    return float(np.clip(np.dot(left_normalized, right_normalized), -1.0, 1.0))
 
 
 class FaceMatcher:
@@ -62,7 +62,7 @@ class FaceMatcher:
             centroid = profile.centroid
             if centroid.shape != normalized_query.shape:
                 continue
-            similarity = float(np.dot(normalized_query, centroid))
+            similarity = float(np.clip(np.dot(normalized_query, centroid), -1.0, 1.0))
             if best_similarity is None or similarity > best_similarity:
                 best_profile = profile
                 best_similarity = similarity
