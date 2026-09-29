@@ -138,7 +138,7 @@ python -m pip install -e ".[dev]"
 
 This creates the commands `download-face-models`, `detect-faces`,
 `extract-face-embeddings`, `enroll-face`, `recognize-faces`, and
-`evaluate-recognition`.
+`evaluate-recognition`, `evaluate-heldout`, and `benchmark-recognition`.
 
 ### 4. Download the models
 
@@ -240,7 +240,31 @@ receive red boxes and the label `Unknown`. A custom threshold can be tested
 with `--threshold 0.50`; increasing it is stricter and may reduce false accepts
 while increasing false rejects.
 
-### Evaluate the pipeline
+### Held-out recognition and measured performance
+
+For résumé-quality experiments, use explicit enrollment/validation/test splits:
+
+```sh
+evaluate-heldout --manifest data/evaluation/manifest.json --output results/heldout.json
+```
+
+The manifest must include separate capture sessions and disjoint unknown people
+for validation and test. See [evaluation protocol and collection guide](docs/evaluation.md)
+for the manifest format, threshold selection, failure accounting and limitations.
+
+For repeated median/p95 stage timings on the same original frames:
+
+```sh
+benchmark-recognition --images data/evaluation --profiles-dir data/profiles --dimensions 0 640 --warmup 3 --repeats 20 --threads 1 --output results/benchmark.json
+```
+
+Existing 112x112 enrollment crops require `--aligned` instead; those measure only
+embedding and optional matching. See [benchmark methodology](docs/benchmarking.md).
+Outputs, biometric inputs and private manifests remain local under ignored
+`results/` and `data/`. No images, embeddings or personal names are written to
+aggregate reports. No held-out accuracy claim is made without a suitable dataset.
+
+### Exploratory pairwise evaluation (legacy)
 
 Organize a consent-based dataset with one directory per identity:
 
@@ -275,7 +299,7 @@ Run the complete suite from the repository root:
 pytest -q
 ```
 
-The 27 tests cover:
+The tests cover:
 
 - YuNet output parsing, frame resizing, coordinate restoration, and drawing.
 - Camera backend selection, startup retries, and read failures.
@@ -283,6 +307,9 @@ The 27 tests cover:
 - Profile creation, reload, duplicate names, and sample validation.
 - Cosine similarity, best-profile selection, and `Unknown` behavior.
 - Genuine/impostor pair generation and threshold metrics.
+- Held-out split validation, duplicate-image rejection and session leakage.
+- Known/unknown outcomes, acquisition failures and validation-only calibration.
+- Benchmark stage timing, warm-up exclusion, paired comparisons and percentiles.
 - Real model inference on a blank frame when the models are installed.
 
 The full flow was also manually tested on macOS: the camera opened through
