@@ -137,8 +137,9 @@ python -m pip install -e ".[dev]"
 ```
 
 This creates the commands `download-face-models`, `detect-faces`,
-`extract-face-embeddings`, `enroll-face`, `recognize-faces`, and
-`evaluate-recognition`, `evaluate-heldout`, and `benchmark-recognition`.
+`extract-face-embeddings`, `enroll-face`, `recognize-faces`,
+`capture-evaluation`, `evaluate-recognition`, `evaluate-heldout`, and
+`benchmark-recognition`.
 
 ### 4. Download the models
 

@@ -23,6 +23,26 @@ Include at least one separate unknown person in validation and another in test.
 For stronger evidence, expand the number of people and sessions substantially.
 There is no magic sample count that establishes general reliability.
 
+### Capture original webcam frames
+
+The `capture-evaluation` command saves full, unannotated webcam frames and adds
+them to `data/evaluation/manifest.json`. Press `Space` for each photo and vary
+your angle, expression, distance and lighting. The command requires exactly one
+detected face before accepting a frame.
+
+Use a separate session label for every split. For example:
+
+```sh
+capture-evaluation --identity matthew --split enrollment --session matthew_day1 --camera 0 --samples 8
+capture-evaluation --identity matthew --split validation --session matthew_day2 --camera 0 --samples 8
+capture-evaluation --identity matthew --split test --session matthew_day3 --camera 0 --samples 8
+```
+
+Repeat those three commands for each enrolled person. Validation must also
+contain a consenting person absent from enrollment. Test must contain a different
+consenting person absent from enrollment. Those unknown participants only need
+their respective validation or test capture command.
+
 Create `data/evaluation/manifest.json` (paths relative to the manifest):
 
 ```json
