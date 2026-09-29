@@ -8,7 +8,7 @@ import cv2 as cv
 import numpy as np
 from numpy.typing import NDArray
 
-from face_pipeline.camera import CameraError, open_camera, read_camera_frame
+from face_pipeline.camera import CameraError, open_webcam, read_camera_frame
 from face_pipeline.detector import (
     DEFAULT_DETECTOR_MODEL,
     DEFAULT_SCORE_THRESHOLD,
@@ -38,7 +38,11 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         help="Image containing exactly one face; repeat for multiple samples",
     )
-    source.add_argument("--camera", type=int, help="Webcam index, usually 0")
+    source.add_argument(
+        "--webcam",
+        action="store_true",
+        help="Capture from the built-in webcam",
+    )
     parser.add_argument(
         "--samples",
         type=int,
@@ -117,7 +121,6 @@ def samples_from_images(
 
 
 def samples_from_camera(
-    camera_index: int,
     sample_count: int,
     detector: YuNetFaceDetector,
     embedder: SFaceEmbedder,
@@ -125,7 +128,7 @@ def samples_from_camera(
     if sample_count < 1:
         raise SystemExit("--samples must be at least 1")
     try:
-        camera = open_camera(camera_index)
+        camera = open_webcam()
     except CameraError as error:
         raise SystemExit(str(error)) from error
 
@@ -182,7 +185,6 @@ def main() -> None:
         samples = samples_from_images(args.image, detector, embedder)
     else:
         samples = samples_from_camera(
-            args.camera,
             args.samples,
             detector,
             embedder,

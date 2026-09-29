@@ -6,7 +6,7 @@ from pathlib import Path
 
 import cv2 as cv
 
-from face_pipeline.camera import CameraError, open_camera, read_camera_frame
+from face_pipeline.camera import CameraError, open_webcam, read_camera_frame
 from face_pipeline.detector import (
     DEFAULT_DETECTOR_MODEL,
     DEFAULT_SCORE_THRESHOLD,
@@ -22,7 +22,11 @@ def parse_args() -> argparse.Namespace:
     )
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--image", type=Path, help="Path to an input image")
-    source.add_argument("--camera", type=int, help="Webcam index, usually 0")
+    source.add_argument(
+        "--webcam",
+        action="store_true",
+        help="Use the built-in webcam",
+    )
     parser.add_argument(
         "--model",
         type=Path,
@@ -82,9 +86,9 @@ def detect_image(
         cv.destroyAllWindows()
 
 
-def detect_camera(detector: YuNetFaceDetector, camera_index: int) -> None:
+def detect_camera(detector: YuNetFaceDetector) -> None:
     try:
-        camera = open_camera(camera_index)
+        camera = open_webcam()
     except CameraError as error:
         raise SystemExit(str(error)) from error
 
@@ -130,7 +134,7 @@ def detect_camera(detector: YuNetFaceDetector, camera_index: int) -> None:
 
 def main() -> None:
     args = parse_args()
-    if args.camera is not None and args.no_display:
+    if args.webcam and args.no_display:
         raise SystemExit("--no-display can only be used with --image")
     if args.output is not None and args.image is None:
         raise SystemExit("--output can only be used with --image")
@@ -148,7 +152,7 @@ def main() -> None:
             display=not args.no_display,
         )
     else:
-        detect_camera(detector, args.camera)
+        detect_camera(detector)
 
 
 if __name__ == "__main__":

@@ -33,9 +33,9 @@ detected face before accepting a frame.
 Use a separate session label for every split. For example:
 
 ```sh
-capture-evaluation --identity matthew --split enrollment --session matthew_day1 --camera 0 --samples 8
-capture-evaluation --identity matthew --split validation --session matthew_day2 --camera 0 --samples 8
-capture-evaluation --identity matthew --split test --session matthew_day3 --camera 0 --samples 8
+capture-evaluation --identity matthew --split enrollment --session matthew_day1 --samples 8
+capture-evaluation --identity matthew --split validation --session matthew_day2 --samples 8
+capture-evaluation --identity matthew --split test --session matthew_day3 --samples 8
 ```
 
 Repeat those three commands for each enrolled person. Validation must also

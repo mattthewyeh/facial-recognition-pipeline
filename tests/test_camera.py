@@ -2,7 +2,12 @@ import numpy as np
 import pytest
 
 import face_pipeline.camera as camera_module
-from face_pipeline.camera import CameraError, open_camera, read_camera_frame
+from face_pipeline.camera import (
+    CameraError,
+    open_webcam,
+    read_camera_frame,
+    require_single_macos_webcam,
+)
 
 
 class FakeCamera:
@@ -21,7 +26,7 @@ class FakeCamera:
         self.released = True
 
 
-def test_open_camera_uses_avfoundation_on_macos(monkeypatch) -> None:
+def test_open_webcam_uses_only_index_zero_on_macos(monkeypatch) -> None:
     fake = FakeCamera(opened=True, reads=[])
     requested: dict[str, int] = {}
 
@@ -31,16 +36,22 @@ def test_open_camera_uses_avfoundation_on_macos(monkeypatch) -> None:
         return fake
 
     monkeypatch.setattr(camera_module.sys, "platform", "darwin")
+    monkeypatch.setattr(
+        camera_module,
+        "list_macos_cameras",
+        lambda: ("FaceTime HD Camera",),
+    )
     monkeypatch.setattr(camera_module.cv, "VideoCapture", fake_video_capture)
 
-    result = open_camera(2)
+    result = open_webcam()
 
     assert result is fake
-    assert requested == {"index": 2, "backend": camera_module.cv.CAP_AVFOUNDATION}
+    assert requested == {"index": 0, "backend": camera_module.cv.CAP_AVFOUNDATION}
 
 
-def test_open_camera_releases_failed_capture(monkeypatch) -> None:
+def test_open_webcam_releases_failed_capture(monkeypatch) -> None:
     fake = FakeCamera(opened=False, reads=[])
+    monkeypatch.setattr(camera_module.sys, "platform", "linux")
     monkeypatch.setattr(
         camera_module.cv,
         "VideoCapture",
@@ -48,9 +59,28 @@ def test_open_camera_releases_failed_capture(monkeypatch) -> None:
     )
 
     with pytest.raises(CameraError, match="Could not open"):
-        open_camera(0)
+        open_webcam()
 
     assert fake.released is True
+
+
+def test_macos_webcam_rejects_continuity_camera() -> None:
+    with pytest.raises(CameraError, match="Continuity Camera is active"):
+        require_single_macos_webcam(("FaceTime HD Camera", "iPhone Camera"))
+
+
+def test_macos_webcam_rejects_external_camera() -> None:
+    with pytest.raises(CameraError, match="Multiple cameras"):
+        require_single_macos_webcam(("FaceTime HD Camera", "USB Camera"))
+
+
+def test_macos_webcam_requires_built_in_camera() -> None:
+    with pytest.raises(CameraError, match="built-in Mac webcam was not found"):
+        require_single_macos_webcam(("USB Camera",))
+
+
+def test_macos_webcam_accepts_only_facetime_camera() -> None:
+    require_single_macos_webcam(("FaceTime HD Camera",))
 
 
 def test_read_camera_frame_retries_startup_failure() -> None:
@@ -67,4 +97,3 @@ def test_read_camera_frame_raises_after_attempts() -> None:
 
     with pytest.raises(CameraError, match="Could not read"):
         read_camera_frame(fake, attempts=2, retry_delay_seconds=0.0)
-

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import cv2 as cv
 
-from face_pipeline.camera import CameraError, open_camera, read_camera_frame
+from face_pipeline.camera import CameraError, open_webcam, read_camera_frame
 from face_pipeline.detector import (
     DEFAULT_DETECTOR_MODEL,
     DEFAULT_SCORE_THRESHOLD,
@@ -32,7 +32,6 @@ def parse_args() -> argparse.Namespace:
         choices=("enrollment", "validation", "test"),
     )
     parser.add_argument("--session", required=True, help="Unique capture-session label")
-    parser.add_argument("--camera", type=int, default=0, help="Webcam index (default: 0)")
     parser.add_argument("--samples", type=int, default=8, help="Frames to capture (default: 8)")
     parser.add_argument(
         "--output-root",
@@ -114,7 +113,7 @@ def main() -> None:
         score_threshold=args.score_threshold,
     )
     try:
-        camera = open_camera(args.camera)
+        camera = open_webcam()
     except CameraError as error:
         raise SystemExit(str(error)) from error
 

@@ -9,7 +9,7 @@ import cv2 as cv
 import numpy as np
 from numpy.typing import NDArray
 
-from face_pipeline.camera import CameraError, open_camera, read_camera_frame
+from face_pipeline.camera import CameraError, open_webcam, read_camera_frame
 from face_pipeline.detector import (
     DEFAULT_DETECTOR_MODEL,
     DEFAULT_SCORE_THRESHOLD,
@@ -34,7 +34,11 @@ def parse_args() -> argparse.Namespace:
     )
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--image", type=Path, help="Path to an input image")
-    source.add_argument("--camera", type=int, help="Webcam index, usually 0")
+    source.add_argument(
+        "--webcam",
+        action="store_true",
+        help="Use the built-in webcam",
+    )
     parser.add_argument(
         "--data-dir",
         type=Path,
@@ -164,13 +168,12 @@ def recognize_image(
 
 
 def recognize_camera(
-    camera_index: int,
     detector: YuNetFaceDetector,
     embedder: SFaceEmbedder,
     matcher: FaceMatcher,
 ) -> None:
     try:
-        camera = open_camera(camera_index)
+        camera = open_webcam()
     except CameraError as error:
         raise SystemExit(str(error)) from error
 
@@ -214,7 +217,7 @@ def recognize_camera(
 
 def main() -> None:
     args = parse_args()
-    if args.camera is not None and args.no_display:
+    if args.webcam and args.no_display:
         raise SystemExit("--no-display can only be used with --image")
     if args.output is not None and args.image is None:
         raise SystemExit("--output can only be used with --image")
@@ -239,7 +242,7 @@ def main() -> None:
             matcher=matcher,
         )
     else:
-        recognize_camera(args.camera, detector, embedder, matcher)
+        recognize_camera(detector, embedder, matcher)
 
 
 if __name__ == "__main__":

@@ -154,9 +154,10 @@ again verifies existing files instead of downloading duplicates.
 ### 5. Allow camera access
 
 On macOS, enable the application running the command under **System Settings >
-Privacy & Security > Camera**, then fully restart that application. Camera
-index `0` is typical, but `1` may be the built-in or preferred camera when
-multiple devices are available.
+Privacy & Security > Camera**, then fully restart that application. The project
+uses only the built-in Mac webcam. Disable iPhone Continuity Camera and disconnect
+external cameras before running webcam commands; the application refuses to
+silently capture from another device.
 
 ## Usage
 
@@ -174,7 +175,7 @@ detect-faces \
 From a camera:
 
 ```bash
-detect-faces --camera 1
+detect-faces --webcam
 ```
 
 The display shows boxes, landmarks, confidence, face count, and FPS. Press `q`
@@ -199,7 +200,7 @@ and confidence scores.
 From a camera:
 
 ```bash
-enroll-face --name "Matthew" --camera 1 --samples 5
+enroll-face --name "Matthew" --webcam --samples 5
 ```
 
 Click the camera window so it has keyboard focus. Show exactly one face, press
@@ -224,7 +225,7 @@ produce a centroid that better represents modest appearance changes.
 From a camera:
 
 ```bash
-recognize-faces --camera 1
+recognize-faces --webcam
 ```
 
 From an image:
